@@ -15,6 +15,7 @@
 #define TIME_LIMIT 3
 #define ROUND_MAC   0
 #define ROUND_USR   1
+#define THREAD_NUM 4
 #define INFD 1e8
 using namespace std;
 struct Node {
@@ -153,31 +154,45 @@ double Select(const int M, const int N, int *top, int **board,
   a[id].tot += 1;
   return score;
 }
-void MC(const int M, const int N, const int *_top, const int *_board,
-        const int lastX, const int lastY, const int noX, const int noY) {
 
-  int** board = new int*[M];
-  for(int i = 0; i < M; i++){
-    board[i] = new int[N];
-    for(int j = 0; j < N; j++){
-      board[i][j] = _board[i * N + j];
+int g_M, g_N;
+const int *g_top;
+const int *g_board;
+int g_lastX, g_lastY, g_noX, g_noY;
+
+void MC() {
+
+  int** board = new int*[g_M];
+  for(int i = 0; i < g_M; i++){
+    board[i] = new int[g_N];
+    for(int j = 0; j < g_N; j++){
+      board[i][j] = g_board[i * g_N + j];
     }
   }
-  int *top = new int[N];
-  for (int i = 0; i < N; i++)
-    top[i] = _top[i];
+  int *top = new int[g_N];
+  for (int i = 0; i < g_N; i++)
+    top[i] = g_top[i];
 
   while (time(0) - global_start < TIME_LIMIT) {
-    Select(M, N, top, board, lastX, lastY, noX, noY, root, ROUND_MAC);
+    Select(g_M, g_N, top, board, g_lastX, g_lastY, g_noX, g_noY, root, ROUND_MAC);
   }
-
-  clearArray(M, N, board);
+  
+  clearArray(g_M, g_N, board);
   delete[] top;
 }
 extern "C" Point* getPoint(const int M, const int N, const int* top, const int* _board,
                            const int lastX, const int lastY, const int noX, const int noY){
   clear();
-  MC(M, N, top, _board, lastX, lastY, noX, noY);
+  g_M = M;
+  g_N = N;
+  g_board = _board;
+  g_top = top;
+  g_lastX = lastX;
+  g_lastY = lastY;
+  g_noX = noX;
+  g_noY = noY;
+  
+  MC();
   double best = -1;
   int idx = -1;
   for (int i = 0; i < N; i++)
@@ -196,6 +211,7 @@ extern "C" Point* getPoint(const int M, const int N, const int* top, const int* 
       }
     }
   assert(idx != -1 && top[idx]);
+  printf("%d\n", size);
   return new Point(top[idx] - 1, idx);
 }
 //external clear
