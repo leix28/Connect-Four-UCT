@@ -12,7 +12,7 @@
 #include "Strategy.h"
 #include "Judge.h"
 #define MAX_NODE 1000000
-#define TIME_LIMIT 1
+#define TIME_LIMIT 4
 #define ROUND_MAC   0
 #define ROUND_USR   1
 #define THREAD_NUM 4
@@ -90,7 +90,7 @@ double Simulation(const int M, const int N, int *top, int **board,
 }
 int SelectNode(int M, int N, int **board, int *top, int id, int dep) {
   int idx = -1;
-  double best = -1;
+  double best = -1e8;
   double tot = 2 * log(a[id].tot);
   assert(a[id].tot > 0);
   double tmp;
@@ -109,6 +109,7 @@ int SelectNode(int M, int N, int **board, int *top, int id, int dep) {
         assert(a[a[id].nxt[i]].tot == -1);
         tmp = a[a[id].nxt[i]].score;
         if (tmp == 1) tmp = INFD;
+        if (tmp == 0) tmp = -1;
       }
       if (tmp > best) {
         best = tmp;
@@ -117,6 +118,8 @@ int SelectNode(int M, int N, int **board, int *top, int id, int dep) {
     }
   }
   assert(idx != -1);
+  if (tmp == INFD) return -1;
+  if (tmp == -1) return -2;
   return idx;
 }
 double Select(const int M, const int N, int *top, int **board,
@@ -156,15 +159,25 @@ double Select(const int M, const int N, int *top, int **board,
     }
   } else {
     int idx = SelectNode(M, N, board, top, id, dep);
-    int x = top[idx] - 1, y = idx;
-    top[idx]--;
-    if (x - 1 == noX && y == noY) top[idx]--;
-    assert(x >= 0 && x < M && y >= 0 && y < N);
-    assert(board[x][y] == 0);
-    board[x][y] = 2 - dep;
-    score = Select(M, N, top, board, x, y, noX, noY, a[id].nxt[idx], dep ^ 1);
-    top[idx] = x + 1;
-    board[x][y] = 0;
+    if (idx == -1) {
+      a[id].score = 0;
+      a[id].tot = -1;
+      return (dep == ROUND_MAC) ? 1 : 0;
+    } else if (idx == -2) {
+      a[id].score = 1;
+      a[id].tot = -1;
+      return (dep == ROUND_MAC) ? 0 : 1;
+    } else {
+      int x = top[idx] - 1, y = idx;
+      top[idx]--;
+      if (x - 1 == noX && y == noY) top[idx]--;
+      assert(x >= 0 && x < M && y >= 0 && y < N);
+      assert(board[x][y] == 0);
+      board[x][y] = 2 - dep;
+      score = Select(M, N, top, board, x, y, noX, noY, a[id].nxt[idx], dep ^ 1);
+      top[idx] = x + 1;
+      board[x][y] = 0;
+    }
   }
   if (dep == ROUND_USR)
     a[id].score += score;
