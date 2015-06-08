@@ -12,7 +12,7 @@
 #include "Strategy.h"
 #include "Judge.h"
 #define MAX_NODE 1000000
-#define TIME_LIMIT 3
+#define TIME_LIMIT 1
 #define ROUND_MAC   0
 #define ROUND_USR   1
 #define THREAD_NUM 4
@@ -39,6 +39,22 @@ void clear() {
   global_start = time(0);
   srand(global_start);
 }
+
+int table1[12];
+int table2[12];
+
+int evaluate(int x, int y, int M, int N, int **board) {
+  int cnt = 1;
+  for (int dx = -1; dx <= 1; dx++)
+    for (int dy = -1; dy <= 1; dy++)
+      if (dx != 0 || dy != 0) {
+        if (0 <= x + 2 * dx && x + 2 * dx < M && 0 <= y + 2 * dy && y + 2 * dy < N &&
+            board[x + dx][y + dy] && board[x + 2 * dx][y + 2 * dy] == board[x + dx][y + dy])
+            cnt += 4;
+      }
+  return cnt;
+}
+
 double Simulation(const int M, const int N, int *top, int **board,
                   const int lastX, const int lastY, const int noX, const int noY, const int dep) {
 
@@ -47,17 +63,20 @@ double Simulation(const int M, const int N, int *top, int **board,
   if (isTie(N, top)) return 0.5;
 
   int posible = 0;
-  for (int i = 0; i < N; i++) if (top[i]) posible++;
-  assert(posible);
-  int idx = rand() % posible + 1;
-  int y = 0;
-
-  for (; idx; y++)
-    if (top[y]) {
-      idx--;
-      if (!idx) break;
+  for (int i = 0; i < N; i++)
+    if (top[i]) {
+      table1[posible] = evaluate(top[i] - 1, i, M, N, board) + (posible ? table1[posible - 1] : 0);
+      table2[posible] = i;
+      posible++;
     }
-  assert(top[y] && !idx);
+  
+  assert(posible);
+  assert(table1[posible - 1]);
+  int idx = rand() % table1[posible - 1];
+  int y = table2[lower_bound(table1, table1 + posible, idx) - table1];
+//  printf("%d\n", y);
+  assert(0 <= y && y < N);
+  assert(top[y]);
 
   int x = top[y] - 1;
   assert(board[x][y] == 0);
@@ -72,11 +91,12 @@ double Simulation(const int M, const int N, int *top, int **board,
 int SelectNode(int M, int N, int **board, int *top, int id, int dep) {
   int idx = -1;
   double best = -1;
+  double tot = 2 * log(a[id].tot);
   assert(a[id].tot > 0);
   double tmp;
   for (int i = 0; i < N; i++) {
     if (a[id].nxt[i] == -1 && top[i]) {
-      tmp = 1 + sqrt(2 * log(a[id].tot));
+      tmp = 1 + sqrt(tot);
       if (tmp > best) {
         best = tmp;
         idx = i;
@@ -84,7 +104,7 @@ int SelectNode(int M, int N, int **board, int *top, int id, int dep) {
     }
     if (a[id].nxt[i] != -1 && top[i]) {
       if (a[a[id].nxt[i]].tot > 0) {
-        tmp = a[a[id].nxt[i]].score / a[a[id].nxt[i]].tot + sqrt(2 * log(a[id].tot) / a[a[id].nxt[i]].tot);
+        tmp = a[a[id].nxt[i]].score / a[a[id].nxt[i]].tot + sqrt(tot / a[a[id].nxt[i]].tot);
       } else {
         assert(a[a[id].nxt[i]].tot == -1);
         tmp = a[a[id].nxt[i]].score;
@@ -211,7 +231,7 @@ extern "C" Point* getPoint(const int M, const int N, const int* top, const int* 
       }
     }
   assert(idx != -1 && top[idx]);
-  printf("%d\n", size);
+//  printf("%d\n", size);
   return new Point(top[idx] - 1, idx);
 }
 //external clear
