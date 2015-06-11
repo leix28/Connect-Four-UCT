@@ -12,7 +12,7 @@
 #include "Strategy.h"
 #include "Judge.h"
 #define MAX_NODE 1000000
-#define TIME_LIMIT 4
+#define TIME_LIMIT 2
 #define ROUND_MAC   0
 #define ROUND_USR   1
 #define THREAD_NUM 4
@@ -40,40 +40,35 @@ void clear() {
   srand(global_start);
 }
 
-int table1[12];
-int table2[12];
-
-int evaluate(int x, int y, int M, int N, int **board) {
-  int cnt = 1;
-  for (int dx = -1; dx <= 1; dx++)
-    for (int dy = -1; dy <= 1; dy++)
-      if (dx != 0 || dy != 0) {
-        if (0 <= x + 2 * dx && x + 2 * dx < M && 0 <= y + 2 * dy && y + 2 * dy < N &&
-            board[x + dx][y + dy] && board[x + 2 * dx][y + 2 * dy] == board[x + dx][y + dy])
-            cnt += 4;
-      }
-  return cnt;
-}
+int table[12];
 
 double Simulation(const int M, const int N, int *top, int **board,
                   const int lastX, const int lastY, const int noX, const int noY, const int dep) {
 
-  if (dep == ROUND_MAC && userWin(lastX, lastY, M, N, board)) return 0;
-  if (dep == ROUND_USR && machineWin(lastX, lastY, M, N, board)) return 1;
+//  if (dep == ROUND_MAC && userWin(lastX, lastY, M, N, board)) return 0;
+//  if (dep == ROUND_USR && machineWin(lastX, lastY, M, N, board)) return 1;
   if (isTie(N, top)) return 0.5;
 
   int posible = 0;
   for (int i = 0; i < N; i++)
     if (top[i]) {
-      table1[posible] = evaluate(top[i] - 1, i, M, N, board) + (posible ? table1[posible - 1] : 0);
-      table2[posible] = i;
+      board[top[i] - 1][i] = 2 - dep;
+      if (dep == ROUND_MAC && machineWin(top[i] - 1, i, M, N, board)) {
+        board[top[i] - 1][i] = 0;
+        return 1;
+      }
+      if (dep == ROUND_USR && userWin(top[i] - 1, i, M, N, board)) {
+        board[top[i] - 1][i] = 0;
+        return 0;
+      }
+      board[top[i] - 1][i] = 0;
+      table[posible] = i;
       posible++;
     }
   
   assert(posible);
-  assert(table1[posible - 1]);
-  int idx = rand() % table1[posible - 1];
-  int y = table2[lower_bound(table1, table1 + posible, idx) - table1];
+  int idx = rand() % posible;
+  int y = table[idx];
 //  printf("%d\n", y);
   assert(0 <= y && y < N);
   assert(top[y]);
