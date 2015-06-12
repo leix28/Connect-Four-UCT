@@ -61,12 +61,32 @@ double Simulation(const int M, const int N, int *top, int **board,
         board[top[i] - 1][i] = 0;
         return 0;
       }
+      
+      int x = top[i] - 2;
+      if (x == noX && i == noY) x--;
+      if (x >= 0) {
+        board[x][i] = dep + 1;
+        if (dep == ROUND_MAC && userWin(x, i, M, N, board)) {
+          board[x][i] = 0;
+          board[top[i] - 1][i] = 0;
+          continue;
+        }
+        if (dep == ROUND_USR && machineWin(x, i, M, N, board)) {
+          board[x][i] = 0;
+          board[top[i] - 1][i] = 0;
+          continue;
+        }
+        board[x][i] = 0;
+      }
+      
       board[top[i] - 1][i] = 0;
       table[posible] = i;
       posible++;
     }
   
-  assert(posible);
+  if (posible == 0)
+    return (dep == ROUND_USR) ? 1 : 0;
+  
   int idx = rand() % posible;
   int y = table[idx];
 //  printf("%d\n", y);
