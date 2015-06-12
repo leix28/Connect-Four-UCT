@@ -12,7 +12,7 @@
 #include "Strategy.h"
 #include "Judge.h"
 #define MAX_NODE 1000000
-#define TIME_LIMIT 2
+#define TIME_LIMIT 1
 #define ROUND_MAC   0
 #define ROUND_USR   1
 #define THREAD_NUM 4
@@ -113,8 +113,8 @@ int SelectNode(int M, int N, int **board, int *top, int id, int dep) {
     }
   }
   assert(idx != -1);
-  if (tmp == INFD) return -1;
-  if (tmp == -1) return -2;
+  if (best == INFD) return -1;
+  if (best == -1) return -2;
   return idx;
 }
 double Select(const int M, const int N, int *top, int **board,
