@@ -150,6 +150,15 @@ double Select(const int M, const int N, int *top, int **board,
       }
       score = Simulation(M, N, top, board, lastX, lastY, noX, noY, dep);
     } else {
+      if (dep == ROUND_MAC && userWin(lastX, lastY, M, N, board)) {
+        return 0;
+      }
+      if (dep == ROUND_USR && machineWin(lastX, lastY, M, N, board)) {
+        return 1;
+      }
+      if (isTie(N, top)) {
+        return 0.5;
+      }
       return Simulation(M, N, top, board, lastX, lastY, noX, noY, dep);
     }
   } else {
