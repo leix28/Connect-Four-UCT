@@ -25,7 +25,7 @@ struct Node {
 
   void clear() {
     score = 0;
-    tot = 1;
+    tot = 0;
     memset(nxt, 255, sizeof(nxt));
   }
 };
@@ -36,6 +36,7 @@ void clear() {
   size = 1;
   root = 0;
   a[0].clear();
+  a[0].tot = 1;
   global_start = time(0);
   srand(global_start);
 }
@@ -250,7 +251,7 @@ extern "C" Point* getPoint(const int M, const int N, const int* top, const int* 
   g_noY = noY;
   
   MC();
-  double best = -1;
+  double best = -1e8;
   int idx = -1;
   for (int i = 0; i < N; i++)
     if (a[0].nxt[i] != -1 && top[i]) {
@@ -258,8 +259,10 @@ extern "C" Point* getPoint(const int M, const int N, const int* top, const int* 
       double tmp = 0;
       if (a[a[0].nxt[i]].tot == -1) {
         tmp = a[a[0].nxt[i]].score;
+        if (tmp == 1) tmp = INFD;
+        if (tmp == 0) tmp = -1;
       } else {
-        tmp = a[a[0].nxt[i]].score / a[a[0].nxt[i]].tot;
+        tmp = a[a[0].nxt[i]].score / a[a[0].nxt[i]].tot + tanh(log(a[a[0].nxt[i]].tot) / 100);
       }
       //      printf("%d %.4lf\n", i, tmp);
       if (tmp > best) {
